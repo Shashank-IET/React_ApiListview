@@ -205,24 +205,24 @@ export default class App extends Component<{}> {
 
     static getBaseFormData() {
         let formData = new FormData();
-        formData.append("password", 'apple');
+        formData.append("password", '****');
         formData.append("source", 'ANDROID_APP');
-        formData.append("packageName", 'com.gcloud.gaadi.stg');
+        formData.append("packageName", '************');
         formData.append("userType", 3);
-        formData.append("apikey", 'U3KqyrewdMuCotTS');
-        formData.append("ANDROID_ID", 'ab697e1669f5b118');
-        formData.append("normal_password", 'apple');
+        formData.append("apikey", '************');
+        formData.append("ANDROID_ID", '****************');
+        formData.append("normal_password", '****');
         formData.append("SERVICE_EXECUTIVE_LOGIN", false);
-        formData.append("normal_password", 'apple');
-        formData.append("cloud_owner", 'GAADI');
-        formData.append("UC_DEALER_USERNAME", 'saroj.sahoo@gaadi.com');
+        formData.append("normal_password", '****');
+        formData.append("cloud_owner", '****');
+        formData.append("UC_DEALER_USERNAME", '********@****.com');
         formData.append("output", 'json');
-        formData.append("username", 'android@gaadi.com');
+        formData.append("username", '********@****.com');
         formData.append("ucdid", 1217);
         formData.append("APP_VERSION", 56);
-        formData.append("user_email", 'android@gaadi.com');
+        formData.append("user_email", '****@****.com');
         formData.append("user_id", 3);
-        formData.append("ipAddress", '192.168.83.85');
+        formData.append("ipAddress", '****************');
         return formData;
     }
 }
