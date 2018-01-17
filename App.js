@@ -11,38 +11,19 @@ TASK ===========
 */
 
 import React, {Component} from 'react';
-import {
-    Image,
-    StyleSheet,
-    Text,
-    View,
-    ActivityIndicator,
-    ListView,
-    ProgressBarAndroid
-} from 'react-native';
-
-import Realm from 'realm';
-
+import {ActivityIndicator, Image, ListView, ProgressBarAndroid, StyleSheet, Text, View} from 'react-native';
 /**
  * Read About Action bar here:
  *      https://github.com/Osedea/react-native-action-bar
  **/
 import ActionBar from "react-native-action-bar";
+
 import Row from './src/Components/Row';
 import Error from './src/Components/Error';
 
-const CarModel = {
-    name: 'CarModel',
-    properties: {
-        make_id: 'string',
-        model: 'string',
-        model_id: 'string',
-        makename: 'string',
-        makeModel: 'string',
-        parent_model_id: 'string',
-        body_type: 'string'
-    }
-};
+import * as DataSource from './src/db/DataSource';
+import * as Request from './src/Api/Request';
+
 const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
 
 export default class App extends Component<{}> {
@@ -58,28 +39,39 @@ export default class App extends Component<{}> {
             models: ds
         };
         this.fetchData = this.fetchData.bind(this);
-        App.getBaseFormData = App.getBaseFormData.bind(this);
-        App.getCarModelDetailForm = App.getCarModelDetailForm.bind(this);
         this.updateModelsListFromDB = this.updateModelsListFromDB.bind(this);
-        this.fillDB = this.fillDB.bind(this);
         this.clearDB = this.clearDB.bind(this);
         this._renderLoading = this._renderLoading.bind(this);
     }
 
     componentWillMount() {
-        Realm.open({
-            schema: [CarModel]
-        }).then(realm => {
-            this.setState({realm});
-            if (realm.objects(CarModel.name).length === 0) {
-                this.setState({onGoing: 'Connecting to Server...'});
-                this.fetchData();
-            } else {
-                this.setState({onGoing: 'Reading Database...'});
-                this.updateModelsListFromDB();
-                this.populate();
-            }
-        });
+        // Realm.open({
+        //     schema: [CarModel]
+        // }).then(realm => {
+        //     this.setState({realm});
+        //     if (realm.objects(CarModel.name).length === 0) {
+        //         this.setState({onGoing: 'Connecting to Server...'});
+        //         this.fetchData();
+        //     } else {
+        //         this.setState({onGoing: 'Reading Database...'});
+        //         this.updateModelsListFromDB();
+        //         this.populate();
+        //     }
+        // });
+
+
+        let dataList = DataSource.all();
+        if (dataList.length === 0) {
+            this.setState({
+                loading: true,
+                onGoing: 'Connecting to Server...'
+            });
+            this.fetchData();
+        } else {
+            this.setState({onGoing: 'Reading Database...'});
+            this.updateModelsListFromDB();
+            this.populate();
+        }
     }
 
     render() {
@@ -130,54 +122,26 @@ export default class App extends Component<{}> {
     }
 
     fetchData() {
-        this.setState({
-            loading: true,
-            onGoing: 'Connecting to Server...'
-        });
-        this.clearDB();
-        fetch('http://beta.usedcarsin.in/gcloud/service.php', {
-            method: 'POST',
-            headers: {},
-            body: App.getCarModelDetailForm()
-        })
-            .then((response) => response.json())
-            .then((jsonResp) => {
-
-                console.log("Received response!! ");
-
-                if (jsonResp) {
-                    if (jsonResp.msg)
-                        console.log(jsonResp.msg);
-
-                    if (jsonResp.model) {
-                        this.fillDB(jsonResp.model)
-                    }
+        let callback = {
+            success: function (response) {
+                if (response.model) {
+                    this.setState({onGoing: 'Saving Data...'});
+                    DataSource.write(response.model);
                 }
                 this.setState({onGoing: 'Reading Database...'});
                 this.updateModelsListFromDB();
                 this.populate();
-            })
-            .catch((error) => {
-                    this.setState({loading: false});
-                    console.error(error);
-                }
-            );
-    }
-
-    fillDB(models) {
-        this.setState({onGoing: 'Saving Data...'});
-        for (let i = 0; i < models.length; i++) {
-            let model = models[i];
-            if (model.hasOwnProperty("make_id")) {
-                this.state.realm.write(() => {
-                    this.state.realm.create(CarModel.name, model);
-                });
+            },
+            failure: function (error) {
+                this.setState({loading: false});
+                console.error(error);
             }
-        }
+        };
+        Request.getModels(callback);
     }
 
     updateModelsListFromDB() {
-        let models = this.state.realm.objects(CarModel.name).sorted('makename', false);
+        let models = DataSource.all();
         let noData = models.length === 0;
         this.setState({
             models: ds.cloneWithRows(models),
@@ -187,43 +151,12 @@ export default class App extends Component<{}> {
     }
 
     clearDB() {
-        this.state.realm.write(() => {
-            this.state.realm.deleteAll();
-        });
+        DataSource.clear();
         this.updateModelsListFromDB();
     }
 
     populate() {
         this.setState({loading: false});
-    }
-
-    static getCarModelDetailForm() {
-        const form = App.getBaseFormData();
-        form.append("method", 'all_model');
-        return form;
-    }
-
-    static getBaseFormData() {
-        let formData = new FormData();
-        formData.append("password", 'apple');
-        formData.append("source", 'ANDROID_APP');
-        formData.append("packageName", 'com.gcloud.gaadi.stg');
-        formData.append("userType", 3);
-        formData.append("apikey", 'U3KqyrewdMuCotTS');
-        formData.append("ANDROID_ID", 'ab697e1669f5b118');
-        formData.append("normal_password", 'apple');
-        formData.append("SERVICE_EXECUTIVE_LOGIN", false);
-        formData.append("normal_password", 'apple');
-        formData.append("cloud_owner", 'GAADI');
-        formData.append("UC_DEALER_USERNAME", 'saroj.sahoo@gaadi.com');
-        formData.append("output", 'json');
-        formData.append("username", 'android@gaadi.com');
-        formData.append("ucdid", 1217);
-        formData.append("APP_VERSION", 56);
-        formData.append("user_email", 'android@gaadi.com');
-        formData.append("user_id", 3);
-        formData.append("ipAddress", '192.168.83.85');
-        return formData;
     }
 }
 
